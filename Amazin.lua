@@ -1,4 +1,4 @@
--- Amazin v1.2.0 (Vanilla/Turtle 1.12)
+-- Amazin v1.2.1 (Vanilla/Turtle 1.12)
 -- Account-wide SavedVariables: AmazinDB
 -- Plays a random stealth-style emote when you press your watched Stealth action bar slot.
 -- Slash commands: /amazin (see bottom)
@@ -141,8 +141,10 @@ SlashCmdList["AMAZIN"] = function(raw)
 
   elseif cmd == "info" then
     chat("watching slot: " .. (WATCH_SLOT and tostring(WATCH_SLOT) or "none"))
-    chat(("stealth chance: %d%% | cooldown: %ds | pool: %d emotes")
-      :format(stealth_chance, STEALTH_COOLDOWN, table.getn(EMOTE_TOKENS_STEALTH)))
+    chat(string.format(
+      "stealth chance: %d%% | cooldown: %ds | pool: %d emotes",
+      stealth_chance, STEALTH_COOLDOWN, table.getn(EMOTE_TOKENS_STEALTH)
+    ))
 
   elseif cmd == "reset" then
     WATCH_SLOT = nil
