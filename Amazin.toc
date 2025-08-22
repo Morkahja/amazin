@@ -1,0 +1,7 @@
+## Interface: 11200
+## Title: Amazin
+## Version: 1.1.0
+## Notes: Plays a random built-in emote (e.g., /rofl, /giggle, /stare) when entering Stealth as a rogue, or from a configured action slot. Includes cooldown and customization. Commands: /amazin slot <n>, watch, emote, info, stealth, chance, scd, reset, save, debug
+## SavedVariables: AmazinDB
+
+Amazin.lua
