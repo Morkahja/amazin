@@ -1,7 +1,6 @@
--- Amazin v1.2.1 (Vanilla/Turtle 1.12)
--- Account-wide SavedVariables: AmazinDB
+-- Amazin v1.2.2 (Vanilla/Turtle 1.12, Lua 5.0-safe)
+-- SavedVariables: AmazinDB
 -- Plays a random stealth-style emote when you press your watched Stealth action bar slot.
--- Slash commands: /amazin (see bottom)
 
 -------------------------------------------------
 -- Stealth emote pool
@@ -29,7 +28,7 @@ local STEALTH_COOLDOWN = 6  -- seconds
 local stealth_chance = 100  -- % chance to fire
 
 -------------------------------------------------
--- Helpers
+-- Helpers (Lua 5.0)
 -------------------------------------------------
 local function chat(text)
   if DEFAULT_CHAT_FRAME then
@@ -49,8 +48,8 @@ local function ensureLoaded()
   if not _amz_loaded_once then
     local db = ensureDB()
     WATCH_SLOT = db.slot or WATCH_SLOT
-    STEALTH_COOLDOWN = db.stealth_cd or STEALTH_COOLDOWN
-    stealth_chance = db.stealth_chance or stealth_chance
+    if db.stealth_cd then STEALTH_COOLDOWN = db.stealth_cd end
+    if db.stealth_chance then stealth_chance = db.stealth_chance end
     _amz_loaded_once = true
   end
 end
@@ -79,6 +78,15 @@ local function doStealthEmoteNow()
   end
 end
 
+-- Lua 5.0-safe command splitter (no string.match)
+local function split_cmd(raw)
+  local s = raw or ""
+  s = string.gsub(s, "^%s+", "")
+  local _, _, cmd, rest = string.find(s, "^(%S+)%s*(.*)$")
+  if not cmd then cmd = "" rest = "" end
+  return cmd, rest
+end
+
 -------------------------------------------------
 -- Hook UseAction
 -------------------------------------------------
@@ -100,16 +108,13 @@ end
 SLASH_AMAZIN1 = "/amazin"
 SlashCmdList["AMAZIN"] = function(raw)
   ensureLoaded()
-  local s = raw or ""
-  s = string.gsub(s, "^%s+", "")
-  local cmd, rest = string.match(s, "^(%S+)%s*(.-)$")
+  local cmd, rest = split_cmd(raw)
 
   if cmd == "slot" then
     local n = tonumber(rest)
     if n then
       WATCH_SLOT = n
-      local db = ensureDB()
-      db.slot = n
+      ensureDB().slot = n
       chat("watching slot " .. n .. " (saved).")
     else
       chat("usage: /amazin slot <number>")
@@ -142,42 +147,4 @@ SlashCmdList["AMAZIN"] = function(raw)
   elseif cmd == "info" then
     chat("watching slot: " .. (WATCH_SLOT and tostring(WATCH_SLOT) or "none"))
     chat(string.format(
-      "stealth chance: %d%% | cooldown: %ds | pool: %d emotes",
-      stealth_chance, STEALTH_COOLDOWN, table.getn(EMOTE_TOKENS_STEALTH)
-    ))
-
-  elseif cmd == "reset" then
-    WATCH_SLOT = nil
-    local db = ensureDB()
-    db.slot = nil
-    chat("cleared saved slot.")
-
-  elseif cmd == "save" then
-    local db = ensureDB()
-    db.slot = WATCH_SLOT
-    db.stealth_chance = stealth_chance
-    db.stealth_cd = STEALTH_COOLDOWN
-    chat("saved now.")
-
-  else
-    chat("/amazin slot <n> | watch | chance <0-100> | scd <seconds> | info | reset | save")
-  end
-end
-
--------------------------------------------------
--- Init / RNG
--------------------------------------------------
-local f = CreateFrame("Frame")
-f:RegisterEvent("PLAYER_LOGIN")
-f:RegisterEvent("PLAYER_LOGOUT")
-
-f:SetScript("OnEvent", function(self, event)
-  if event == "PLAYER_LOGIN" then
-    math.randomseed(math.floor(GetTime() * 1000)); math.random()
-  elseif event == "PLAYER_LOGOUT" then
-    local db = ensureDB()
-    db.slot = WATCH_SLOT
-    db.stealth_chance = stealth_chance
-    db.stealth_cd = STEALTH_COOLDOWN
-  end
-end)
+      "stealth chance: %d%% | cooldown: %ds |
