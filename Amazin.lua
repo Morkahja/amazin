@@ -147,4 +147,41 @@ SlashCmdList["AMAZIN"] = function(raw)
   elseif cmd == "info" then
     chat("watching slot: " .. (WATCH_SLOT and tostring(WATCH_SLOT) or "none"))
     chat(string.format(
-      "stealth chance: %d%% | cooldown: %ds |
+      "stealth chance: %d%% | cooldown: %ds | pool: %d emotes",
+      stealth_chance, STEALTH_COOLDOWN, table.getn(EMOTE_TOKENS_STEALTH)
+    ))
+
+  elseif cmd == "reset" then
+    WATCH_SLOT = nil
+    ensureDB().slot = nil
+    chat("cleared saved slot.")
+
+  elseif cmd == "save" then
+    local db = ensureDB()
+    db.slot = WATCH_SLOT
+    db.stealth_chance = stealth_chance
+    db.stealth_cd = STEALTH_COOLDOWN
+    chat("saved now.")
+
+  else
+    chat("/amazin slot <n> | watch | chance <0-100> | scd <seconds> | info | reset | save")
+  end
+end
+
+-------------------------------------------------
+-- Init / RNG
+-------------------------------------------------
+local f = CreateFrame("Frame")
+f:RegisterEvent("PLAYER_LOGIN")
+f:RegisterEvent("PLAYER_LOGOUT")
+
+f:SetScript("OnEvent", function(self, event)
+  if event == "PLAYER_LOGIN" then
+    math.randomseed(math.floor(GetTime() * 1000)); math.random()
+  elseif event == "PLAYER_LOGOUT" then
+    local db = ensureDB()
+    db.slot = WATCH_SLOT
+    db.stealth_chance = stealth_chance
+    db.stealth_cd = STEALTH_COOLDOWN
+  end
+end)
