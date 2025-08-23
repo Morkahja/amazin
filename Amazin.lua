@@ -1,4 +1,4 @@
--- Amazin v1.2.2 (Vanilla/Turtle 1.12, Lua 5.0-safe)
+-- Amazin v1.2.4 (Vanilla/Turtle 1.12, Lua 5.0-safe)
 -- SavedVariables: AmazinDB
 -- Plays a random stealth-style emote when you press your watched Stealth action bar slot.
 
@@ -6,16 +6,7 @@
 -- Stealth emote pool
 -------------------------------------------------
 local EMOTE_TOKENS_STEALTH = {
-  "ROFL",     -- /rofl
-  "LAUGH",    -- /lol
-  "GIGGLE",   -- /giggle
-  "STARE",    -- /stare
-  "GRIN",     -- /grin
-  "SMIRK",    -- /smirk
-  "CHUCKLE",  -- /chuckle
-  "WINK",     -- /wink
-  "SHUSH",    -- /shush
-  "SNICKER",  -- /snicker
+  "ROFL","LAUGH","GIGGLE","STARE","GRIN","SMIRK","CHUCKLE","WINK","SHUSH","SNICKER",
 }
 
 -------------------------------------------------
@@ -24,8 +15,8 @@ local EMOTE_TOKENS_STEALTH = {
 local WATCH_SLOT = nil
 local WATCH_MODE = false
 local LAST_STEALTH_EMOTE_TIME = 0
-local STEALTH_COOLDOWN = 6  -- seconds
-local stealth_chance = 100  -- % chance to fire
+local STEALTH_COOLDOWN = 6   -- seconds
+local stealth_chance = 100   -- % chance to fire
 
 -------------------------------------------------
 -- Helpers (Lua 5.0)
@@ -72,7 +63,7 @@ local function doStealthEmoteNow()
   local now = GetTime()
   if now - LAST_STEALTH_EMOTE_TIME < STEALTH_COOLDOWN then return end
   LAST_STEALTH_EMOTE_TIME = now
-  if math.random(1,100) <= stealth_chance then
+  if math.random(1, 100) <= stealth_chance then
     local e = pick(EMOTE_TOKENS_STEALTH)
     if e then performBuiltInEmote(e) end
   end
@@ -85,6 +76,23 @@ local function split_cmd(raw)
   local _, _, cmd, rest = string.find(s, "^(%S+)%s*(.*)$")
   if not cmd then cmd = "" rest = "" end
   return cmd, rest
+end
+
+-- Rested XP reporter
+local function reportRestedXP()
+  local r = GetXPExhaustion()
+  if not r then
+    chat("No rest.")
+    return
+  end
+  local m = UnitXPMax("player")
+  if not m or m == 0 then
+    chat("No XP data.")
+    return
+  end
+  local bubbles = math.floor((r * 20) / m + 0.5)
+  if bubbles > 30 then bubbles = 30 end
+  chat("Rest: " .. tostring(bubbles) .. " bubbles (" .. tostring(r) .. " XP)")
 end
 
 -------------------------------------------------
@@ -144,12 +152,14 @@ SlashCmdList["AMAZIN"] = function(raw)
       chat("usage: /amazin scd <0-60>")
     end
 
+  elseif cmd == "rexp" then
+    reportRestedXP()
+
   elseif cmd == "info" then
     chat("watching slot: " .. (WATCH_SLOT and tostring(WATCH_SLOT) or "none"))
-    chat(string.format(
-      "stealth chance: %d%% | cooldown: %ds | pool: %d emotes",
-      stealth_chance, STEALTH_COOLDOWN, table.getn(EMOTE_TOKENS_STEALTH)
-    ))
+    chat("stealth chance: " .. tostring(stealth_chance) ..
+        "% | cooldown: " .. tostring(STEALTH_COOLDOWN) ..
+        "s | pool: " .. tostring(table.getn(EMOTE_TOKENS_STEALTH)) .. " emotes")
 
   elseif cmd == "reset" then
     WATCH_SLOT = nil
@@ -164,7 +174,7 @@ SlashCmdList["AMAZIN"] = function(raw)
     chat("saved now.")
 
   else
-    chat("/amazin slot <n> | watch | chance <0-100> | scd <seconds> | info | reset | save")
+    chat("/amazin slot <n> | watch | chance <0-100> | scd <seconds> | rexp | info | reset | save")
   end
 end
 
